@@ -139,7 +139,7 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
         int strw, int kh, int kw, bool verify)
 {
 
-    int padh = kh / 2, padw = kw / 2;
+    int padh = (kh - 1) / 2, padw = (kw - 1) / 2;
     int oh = ih / strh, ow = iw / strw;
     int dilh = 0, dilw = 0;
 

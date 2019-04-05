@@ -136,14 +136,14 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
     auto c_weights_desc = memory::desc({ oc, ic, kh, kw }, memory::data_type::f32,
                                         memory::format::hIOw16i16o);
     auto c_dst_desc = memory::desc({ mb, oc, oh, ow }, memory::data_type::f32,
-                                        memory::format::NhCw16n128c);
+                                        memory::format::NhCw16n64c);
     auto c_bias_desc = memory::desc({ oc }, memory::data_type::f32,
                                         memory::format::x);
 
     auto c_src_desc_f = memory::desc({ mb, ic, ih, iw }, memory::data_type::f32,
                                         memory::format::Nhcw16n);
     auto c_dst_desc_f = memory::desc({ mb, oc, oh, ow }, memory::data_type::f32,
-                                        memory::format::NhCw16n128c);
+                                        memory::format::NhCw16n64c);
 
     auto c_src = memory({c_src_desc, cpu_engine}, src_data);
     auto c_diff_weights = memory({c_weights_desc, cpu_engine}, wei_data);

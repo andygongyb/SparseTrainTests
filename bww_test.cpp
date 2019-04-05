@@ -95,12 +95,19 @@ void compute_ref_conv_bwd_weights(const test_convolution_sizes_t &c,
     });
 }
 
-void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int oh, int ow, int kh, int kw, bool verify)
+void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int strh,
+        int strw, int kh, int kw, bool verify)
 {
 
-    int padh = 1, padw = 1;
-    int strh = 1, strw = 1;
+    int padh = kh / 2, padw = kw / 2;
+    int oh = ih / strh, ow = iw / strw;
     int dilh = 0, dilw = 0;
+
+
+
+    std::cout << "mb=" << mb << " ic=" << ic << " ih=" << ih << " iw=" << iw
+        << " oc=" << oc << " oh=" << oh << " ow=" << ow << " kh=" << kh << " kw=" << kw
+        << " strh=" << strh << " strw=" << strw << std::endl;
 
 
     float *src_data = (float *) aligned_alloc(64, mb * ic * ih * iw * sizeof(float));
@@ -111,11 +118,7 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
     float *wei_ref_data = (float *) aligned_alloc(64, oc * ic * kh * kw * sizeof(float));
 
     for (size_t i = 0; i < mb * oc * oh * ow; ++i) {
-        if (rand() % 100 >= sparsity) {
-            dst_data[i] = i;
-        } else {
-            dst_data[i] = 0.0;
-        }
+        dst_data[i] = i;
     }
 
     for (size_t i = 0; i < mb * ic * ih * iw; ++i) {
@@ -231,10 +234,12 @@ int main(int argc, char **argv)
 
     int mb = 32;
     int ic = 512, ih = 28, iw = 28;
-    int oc = 512, oh = 28, ow = 28;
+    int oc = 512;
     int kh = 3, kw = 3;
 
     bool verify = VERIFY;
+
+    int strh = 1, strw = 1;
 
     if (argc > 1) {
         sparsity = atoi(argv[1]);
@@ -265,11 +270,11 @@ int main(int argc, char **argv)
     }
 
     if (argc > 8) {
-        oh = atoi(argv[8]);
+        strh = atoi(argv[8]);
     }
 
     if (argc > 9) {
-        ow = atoi(argv[9]);
+        strw = atoi(argv[9]);
     }
 
     if (argc > 10) {
@@ -280,12 +285,9 @@ int main(int argc, char **argv)
         kw = atoi(argv[11]);
     }
 
-    std::cout << "mb=" << mb << " ic=" << ic << " ih=" << ih << " iw=" << iw
-        << " oc=" << oc << " oh=" << oh << " ow=" << ow << " kh=" << kh << " kw=" << kw << std::endl;
-
     try
     {
-        simple_net(sparsity, n, mb, ic, ih, iw, oc, oh, ow, kh, kw, verify);
+        simple_net(sparsity, n, mb, ic, ih, iw, oc, strh, strw, kh, kw, verify);
         std::cout << "passed" << std::endl;
     }
     catch (error &e)
