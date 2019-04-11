@@ -1,7 +1,7 @@
 
 # Validation for SparseTrain
 
-This repository contains testers for SparseTrain. SparsTrain only support machines with AVX-512 support, such as the Intel Skylake-X generation. Please modify the Makefile to suit your environment. Compiling the testers requires SparseTrain and Intel VTune Amplifier being installed. You can run the testers with or without VTune. After running `make`, you will get 2 executables from each source file. The one with `_verify` suffix verifies the output from SparseTrain against a (very slow) reference convolution. Because the verification takes very long time, we suggest you only verify with small convolution configureations. For example, N=16 C=128 W=7 H=7 K=128 O=1 P=1 R=3 S=3. The one with `_noverify` as suffix does not perform such verification. The executables to test SparseTrain are:
+This repository contains testers for SparseTrain. **SparsTrain only supports machines with AVX-512 support, such as the Intel Skylake-X generation.** Please modify the Makefile to suit your environment. Compiling the testers requires SparseTrain and Intel VTune Amplifier being installed. You can run the testers with or without VTune. After running `make`, you will get 2 executables from each source file. The one with `_verify` suffix verifies the output from SparseTrain against a (very slow) reference convolution. Because the verification takes very long time, we suggest you only verify with small convolution configureations. For example, N=16 C=128 W=7 H=7 K=128 O=1 P=1 R=3 S=3. The one with `_noverify` as suffix does not perform such verification. The executables to test SparseTrain are:
 
 ```
 ./fwd_trans_test_verify
