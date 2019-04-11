@@ -23,3 +23,5 @@ For example
 runs the forward propagation at 70% sparsity for 10000 iterations. The convolution size is set to N=16 C=256 W=14 H=14 K=512 O=1 P=1 R=3 S=3.
 
 The testing programs output the execution time in cycles measured with the RDTSCP instruction to standard out.
+
+The 3 spreadsheets contain profiled sparsity of layers from VGG16, ResNet-34, and ResNet-50 during their training from beginning to convergence.
