@@ -23,11 +23,6 @@
 #include <cstring>
 #include <ittnotify.h>
 #include "mkldnn.hpp"
-#include "test_convolution_forward_common.hpp"
-
-#ifndef VERIFY
-#define VERIFY (true)
-#endif
 
 using namespace mkldnn;
 
@@ -44,63 +39,8 @@ inline int right_padding_(int i, int o, int k, int p, int s, int d = 0) {
     return (o - 1) * s + (k - 1) * (d + 1) - (p + i - 1);
 }
 
-template <typename data_t_diff_dst, typename data_t_wei,
-          typename data_t_acc, typename data_t_diff_src>
-void compute_ref_conv_bwd_data_(const test_convolution_sizes_t &c,
-        const memory &diff_src, const memory &weights, const memory &diff_dst)
-{
-    data_t_diff_dst *diff_dst_data = (data_t_diff_dst *)diff_dst.get_data_handle();
-    data_t_wei *weights_data = (data_t_wei *)weights.get_data_handle();
-    data_t_diff_src *diff_src_data = (data_t_diff_src *)diff_src.get_data_handle();
-
-    const memory::desc diff_src_d = diff_src.get_primitive_desc().desc();
-    const memory::desc weights_d = weights.get_primitive_desc().desc();
-    const memory::desc diff_dst_d = diff_dst.get_primitive_desc().desc();
-
-    size_t padded_ic = diff_src_d.data.layout_desc.blocking.padding_dims[1];
-    size_t padded_oc = diff_dst_d.data.layout_desc.blocking.padding_dims[1];
-
-    mkldnn::impl::parallel_nd(c.mb, c.ng, c.ic / c.ng, c.ih, c.iw,
-        [&](int mb, int g, int ic, int ih, int iw) {
-            size_t sidx = mb * padded_ic * c.ih * c.iw
-                    + g * padded_ic / c.ng * c.ih * c.iw
-                    + ic * c.ih * c.iw + ih * c.iw + iw;
-            data_t_acc a = data_t_acc(0);
-            for (int oc = 0; oc < c.oc / c.ng; oc++) {
-                for (int kh = 0; kh < c.kh; kh++) {
-                    for (int kw = 0; kw < c.kw; kw++) {
-                        if (iw + c.padw < kw * (1 + c.dilw)
-                           || ih + c.padh < kh * (1 + c.dilh))
-                            continue;
-                        int ow = iw - kw * (1 + c.dilw) + c.padw;
-                        int oh = ih - kh * (1 + c.dilh) + c.padh;
-                        if (ow % c.strw != 0 || oh % c.strh != 0)
-                            continue;
-                        ow /= c.strw;
-                        oh /= c.strh;
-                        if (oh < c.oh && ow < c.ow) {
-                            size_t didx = mb * padded_oc * c.oh * c.ow
-                                + g * padded_oc / c.ng * c.oh * c.ow
-                                + oc * c.oh * c.ow + oh * c.ow + ow;
-                            size_t widx =
-                                g * padded_oc / c.ng * padded_ic
-                                / c.ng * c.kh * c.kw
-                                + oc * padded_ic / c.ng * c.kh * c.kw
-                                + ic * c.kh * c.kw + kh * c.kw + kw;
-
-                            a += (data_t_acc)(
-                                diff_dst_data[map_index(diff_dst_d, didx)]
-                                * weights_data[map_index(weights_d, widx)]);
-                        }
-                    }
-                }
-            }
-            diff_src_data[map_index(diff_src_d, sidx)] = (data_t_diff_src)a;
-    });
-}
-
 void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int strh,
-        int strw, int kh, int kw, bool verify)
+        int strw, int kh, int kw)
 {
 
     int padh = kh / 2, padw = kw / 2;
@@ -122,29 +62,15 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
 
     size_t s = 0;
 
-    /* initializing non-zero values for src */
-    /*for (size_t i = 0; i < mb * oc * oh * ow; ++i) {
-        if (rand() % 100 >= sparsity) {
-            dst_data[i] = sinf((float)i) + 2.0;
-        } else {
-            dst_data[i] = 0.0;
-            s++;
-        }
-    }*/
-
     for (size_t i = 0; i < mb * oc * oh * ow; ++i) {
         if (rand() % 100 >= sparsity) {
             dst_data[i] = i;
         } else {
             dst_data[i] = 0.0;
-            //s++;
         }
     }
 
-    //std::cout << "actuall sparsity:" << (double) s / (double) (mb * oc * oh * ow) << std::endl;
-
     for (size_t i = 0; i < oc * ic * kh * kw; ++i) {
-        //wei_data[i] = sinf((float)i);
         wei_data[i] = i;
     }
 
@@ -216,32 +142,6 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
     }
     __itt_pause();
 
-
-    if (verify) {
-    
-        test_convolution_sizes_t cd(mb, 1, ic, ih, iw, oc, oh, ow, kh, kw, padh, padw, strh, strw);
-
-        compute_ref_conv_bwd_data_<float, float, float, float>(
-                cd, c_diff_ref_src, c_weights, c_diff_dst);
-
-
-        /*for (size_t i = 0; i < mb * ic * ih * iw; ++i) {
-            std::cout << src_data[i] << " ";
-        }
-        std::cout << std::endl << std::endl;
-
-        for (size_t i = 0; i < mb * ic * ih * iw; ++i) {
-            std::cout << src_ref_data[i] << " ";
-        }
-        std::cout << std::endl;*/
-
-        check_zero_tail<float>(1, c_diff_ref_src);
-
-        compare_data<float>(c_diff_ref_src, c_diff_src);
-        check_zero_tail<float>(0, c_diff_src);
-
-    }
-
 }
 
 
@@ -254,8 +154,6 @@ int main(int argc, char **argv)
     int ic = 512, ih = 28, iw = 28;
     int oc = 512;
     int kh = 1, kw = 1;
-
-    bool verify = VERIFY;
 
     int strh = 1, strw = 1;
 
@@ -305,7 +203,7 @@ int main(int argc, char **argv)
 
     try
     {
-        simple_net(sparsity, n, mb, ic, ih, iw, oc, strh, strw, kh, kw, verify);
+        simple_net(sparsity, n, mb, ic, ih, iw, oc, strh, strw, kh, kw);
         std::cout << "passed" << std::endl;
     }
     catch (error &e)

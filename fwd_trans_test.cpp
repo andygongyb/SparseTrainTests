@@ -44,35 +44,6 @@ inline int right_padding_(int i, int o, int k, int p, int s, int d = 0) {
     return (o - 1) * s + (k - 1) * (d + 1) - (p + i - 1);
 }
 
-/*struct test_convolution_sizes_t {
-    test_convolution_sizes_t(
-        int mb,
-        int ng,
-        int ic, int ih, int iw,
-        int oc, int oh, int ow,
-        int kh, int kw,
-        int padh, int padw,
-        int strh, int strw,
-        int dilh=0, int dilw=0
-    ) :
-        mb(mb),
-        ng(ng),
-        ic(ic), ih(ih), iw(iw),
-        oc(oc), oh(oh), ow(ow),
-        kh(kh), kw(kw),
-        padh(padh), padw(padw),
-        strh(strh), strw(strw),
-        dilh(dilh), dilw(dilw) {}
-    int mb;
-    int ng;
-    int ic, ih, iw;
-    int oc, oh, ow;
-    int kh, kw;
-    int padh, padw;
-    int strh, strw;
-    int dilh, dilw;
-};*/
-
 template <typename data_t_src, typename data_t_wei,
           typename data_t_acc, typename data_t_dst>
 void compute_ref_conv_fwd_(const test_convolution_sizes_t &c,
@@ -244,15 +215,6 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
     }
     __itt_pause();
 
-    /*size_t padded_ic = c_src_desc.data.layout_desc.blocking.padding_dims[1];
-
-    size_t iidx = 0 * padded_ic * ih * iw + 0 * ih * iw + 0 * iw + 1;
-    size_t widx = 16 * padded_ic * kh * kw
-        + 0 * kh * kw + 0 * kw + 0;
-
-    std::cout << "padded ic: " << padded_ic << " idx_i: " << map_index(c_src_desc, iidx)
-            << " idx_w: " << map_index(c_weights_desc, widx) << std::endl;*/
-
     if (verify) {
 
         test_convolution_sizes_t cd(mb, 1, ic, ih, iw, oc, oh, ow, kh, kw, padh, padw, strh, strw);
@@ -260,17 +222,7 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
         compute_ref_conv_fwd_<float, float, float, float>(
                 cd, c_src_desc, c_weights_desc, c_bias_desc, c_dst_ref_desc,
                 c_src, c_weights, c_bias, c_dst_ref);
-
-        /*for (size_t i = 0; i < mb * oc * oh * ow; ++i) {
-            std::cout << dst_data[i] << " ";
-        }
-        std::cout << std::endl << std::endl;
-
-        for (size_t i = 0; i < mb * oc * oh * ow; ++i) {
-            std::cout << dst_ref_data[i] << " ";
-        }
-        std::cout << std::endl;*/
-
+        
         check_zero_tail<float>(1, c_dst_ref);
 
         compare_data<float>(c_dst_ref, c_dst);

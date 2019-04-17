@@ -122,16 +122,6 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
 
     size_t s = 0;
 
-    /* initializing non-zero values for src */
-    /*for (size_t i = 0; i < mb * oc * oh * ow; ++i) {
-        if (rand() % 100 >= sparsity) {
-            dst_data[i] = sinf((float)i) + 2.0;
-        } else {
-            dst_data[i] = 0.0;
-            s++;
-        }
-    }*/
-
     for (size_t i = 0; i < mb * oc * oh * ow; ++i) {
         if (rand() % 100 >= sparsity) {
             dst_data[i] = i;
@@ -141,10 +131,7 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
         }
     }
 
-    //std::cout << "actuall sparsity:" << (double) s / (double) (mb * oc * oh * ow) << std::endl;
-
     for (size_t i = 0; i < oc * ic * kh * kw; ++i) {
-        //wei_data[i] = sinf((float)i);
         wei_data[i] = i;
     }
 
@@ -222,17 +209,6 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
 
         compute_ref_conv_bwd_data_<float, float, float, float>(
                 cd, c_diff_ref_src, c_weights, c_diff_dst);
-
-
-        /*for (size_t i = 0; i < mb * ic * ih * iw; ++i) {
-            std::cout << src_data[i] << " ";
-        }
-        std::cout << std::endl << std::endl;
-
-        for (size_t i = 0; i < mb * ic * ih * iw; ++i) {
-            std::cout << src_ref_data[i] << " ";
-        }
-        std::cout << std::endl;*/
 
         check_zero_tail<float>(1, c_diff_ref_src);
 

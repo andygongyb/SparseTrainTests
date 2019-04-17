@@ -207,22 +207,6 @@ void simple_net(int sparsity, int n, int mb, int ic, int ih, int iw, int oc, int
 
         compute_ref_conv_bwd_weights(cd, c_src, c_diff_dst, c_diff_ref_weights);
 
-
-        /*for (size_t i = 0; i < ic * oc * kh * kw; ++i) {
-            std::cout << wei_data[i] << " ";
-        }
-        std::cout << std::endl << std::endl;
-
-        for (size_t i = 0; i < ic * oc * kh * kw; ++i) {
-            std::cout << wei_ref_data[i] << " ";
-        }
-        std::cout << std::endl << std::endl;
-
-        for (size_t i = 0; i < ic * oc * kh * kw; ++i) {
-            std::cout << wei_data[i] / wei_ref_data[i] << " ";
-        }
-        std::cout << std::endl;*/
-
         check_zero_tail<float>(1, c_diff_ref_weights);
 
         compare_data<float>(c_diff_ref_weights, c_diff_weights);
